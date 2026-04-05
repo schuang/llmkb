@@ -109,6 +109,7 @@ The scripts create a rigid, highly reliable framework that never hallucinates fa
 
 ### Probabilistic Logic (The Researcher / LLM)
 Once the deterministic scripts have built a perfectly cited, text-searchable evidence pack, the LLM performs the heavy cognitive lifting:
+- **Metadata Recovery**: Reading noisy OCR text from old scanned images to probabilistically identify missing titles, authors, and publication years, seamlessly bridging the gap back to deterministic renaming.
 - **Semantic Summarization**: Reading dense introductions and synthesizing concise, high-level summaries for `wiki/source/` pages.
 - **Classification Refinement**: Taking heuristically classified documents (e.g., "unknown" or "book") and intelligently categorizing them (e.g., "textbook," "monograph," "solution manual").
 - **Concept Extraction & Naming**: Looking across the corpus, recognizing that multiple sources discuss the same underlying idea (despite different terminology), and generating unified "Concept Page" titles and summaries.
@@ -119,6 +120,7 @@ Once the deterministic scripts have built a perfectly cited, text-searchable evi
 The system is fully functional as a decoupled CLI suite. All stages of the build pipeline are implemented and can be invoked globally or per-document.
 - `llmkb-catalog`: Scans files, resolves metadata, and builds the manifest.
 - `llmkb-clean`: Garbage collects artifacts for removed files.
+- `llmkb-recover-metadata`: Uses an LLM to recover missing metadata from OCR'd text and triggers an auto-rename.
 - `llmkb-rename`: Safely renames doc_ids and updates all wiki links.
 - `llmkb-extract`: Extracts text and metadata (format-aware).
 - `llmkb-resolve`: Identifies exact and near-duplicates.

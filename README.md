@@ -57,6 +57,7 @@ The engine will automatically catalog your files, extract their text, and genera
 - `llmkb-update`: Runs the full end-to-end update pipeline.
 - `llmkb-catalog`: Scans files, resolves metadata, and builds the manifest.
 - `llmkb-clean`: Garbage collects artifacts and wiki pages for removed files.
+- `llmkb-recover-metadata`: Uses an LLM to recover missing metadata from OCR'd text and automatically rename files.
 - `llmkb-rename`: Safely renames a `doc_id` and heals all wiki links.
 - `llmkb-test-metadata`: Utility to test live API resolution for a DOI/ISBN.
 - `llmkb-search`: Natural-language search across the generated knowledge base.
