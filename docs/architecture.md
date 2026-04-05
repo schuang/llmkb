@@ -101,7 +101,7 @@ The defining philosophy of this architecture is **Deterministic Retrieval, Proba
 The scripts create a rigid, highly reliable framework that never hallucinates facts, paths, or relationships:
 - **Ingestion & Fingerprinting**: Scanning the `raw/` folder (PDF, ePub, Word, MD, etc.), reading native metadata, and computing SHA-256 hashes.
 - **Duplicate Detection**: Finding exact matches (via hash) and near-duplicates (via text-shingling).
-- **Text Extraction**: Ripping raw text using format-aware tools (`pdftotext`, `pandoc`).
+- **Text Extraction**: Ripping raw text using format-aware tools (`pdftotext`, `pandoc`). Includes an automatic **OCR Fallback (Tesseract)**: if a PDF is detected as a scanned image (zero selectable text), the engine automatically converts the pages to high-resolution images and transcribes them.
 - **Section Paging**: Creating stable semantic chunks for non-paginated formats (ePub, HTML, etc.) based purely on header structure, avoiding arbitrary virtual pages.
 - **Structural Heuristics**: Using Regex to find chapter headings or extracting explicit phrases based on domain keywords.
 - **State Management & Pathing**: Resolving `KBContext` paths, managing JSON artifacts, and orchestrating the update pipeline.

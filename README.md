@@ -10,6 +10,7 @@ A specialized command-line engine for building and maintaining a personal resear
 
 - **Automated Metadata**: Resolves DOI/ISBN identifiers via academic APIs (Crossref, Open Library).
 - **Multi-Format Support**: Native processing for PDF, ePub, Microsoft Word, Markdown, and HTML.
+- **OCR Fallback**: Automatically detects scanned image-only PDFs and extracts text using Tesseract.
 - **Managed Ingestion**: Auto-renaming and de-duplication at the folder level.
 - **Zettelkasten-Ready**: Generates Obsidian-style Markdown pages with stable internal links.
 - **Data/Code Separation**: Keeps your private research data separate from the execution logic.
