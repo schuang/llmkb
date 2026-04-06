@@ -17,7 +17,7 @@ dev = ["pytest", "pytest-cov"]
 [project.scripts]
 llmkb-update = "llmkb.update_kb:main"
 llmkb-test-metadata = "llmkb.test_metadata:main"
-llmkb-catalog = "llmkb.catalog_raw:main"
+llmkb-add = "llmkb.add_source:main"
 llmkb-clean = "llmkb.clean_kb:main"
 llmkb-rename = "llmkb.rename_kb:main"
 llmkb-extract = "llmkb.extract_pages:main"

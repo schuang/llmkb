@@ -102,11 +102,11 @@ def main() -> None:
 
     results = {}
     
-    # 1. Cataloging & Cleaning (Structural)
+    # 1. Cataloging & Add/Sync (Structural)
     catalog_args = ["--kb-root", args.kb_root]
     if args.recursive:
         catalog_args.append("--recursive")
-    results["catalog"] = run_step("catalog_raw.py", catalog_args)
+    results["catalog"] = run_step("add_source.py", catalog_args)
     results["clean"] = run_step("clean_kb.py", ["--kb-root", args.kb_root])
     
     # 2. Extraction & Resolution (Heavy processing)
