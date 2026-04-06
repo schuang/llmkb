@@ -483,21 +483,21 @@ def process_incoming_file(entry: dict[str, Any], original_path: Path, kb_root: P
 
         if is_real_duplicate:
             rejected_dir = kb_root / "raw" / "rejected" / "duplicates"
-        rejected_dir.mkdir(parents=True, exist_ok=True)
-        new_path = rejected_dir / original_path.name
+            rejected_dir.mkdir(parents=True, exist_ok=True)
+            new_path = rejected_dir / original_path.name
 
-        # Handle collisions in the rejected folder
-        counter = 1
-        while new_path.exists():
-            new_path = rejected_dir / f"{original_path.stem}-{counter}{original_path.suffix}"
-            counter += 1
+            # Handle collisions in the rejected folder
+            counter = 1
+            while new_path.exists():
+                new_path = rejected_dir / f"{original_path.stem}-{counter}{original_path.suffix}"
+                counter += 1
 
-        print(f"Warning: Duplicate detected. Moving '{original_path.name}' -> 'rejected/duplicates/'")
-        original_path.rename(new_path)
+            print(f"Warning: Duplicate detected. Moving '{original_path.name}' -> 'rejected/duplicates/'")
+            original_path.rename(new_path)
 
-        # Mark entry as redundant for downstream cleanup if necessary
-        entry["is_duplicate_rejected"] = True
-        return new_path
+            # Mark entry as redundant for downstream cleanup if necessary
+            entry["is_duplicate_rejected"] = True
+            return new_path
 
     # 2. Normal Ingestion
     library_dir = kb_root / "raw" / "library"
