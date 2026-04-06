@@ -122,6 +122,14 @@ def rename_document(context: KBContext, old_id: str, new_id: str, dry_run: bool 
     if not no_link_update:
         update_wiki_links(context.wiki_dir, old_id, new_id, dry_run)
 
+    # 6. Update sources.json directly
+    if not dry_run:
+        catalog["documents"] = [doc for doc in catalog.get("documents", []) if doc["doc_id"] != old_id]
+        # We don't add the NEW entry here because llmkb-update will pick it up correctly 
+        # now that the physical file is renamed and the Duplicate Shield is fixed.
+        # Removing the old entry prevents "phantom" duplicates.
+        write_json(context.catalog_path, catalog)
+
     return True
 
 def main() -> None:

@@ -89,6 +89,11 @@ def parse_args() -> argparse.Namespace:
         dest="recursive",
         help="Disable recursive scanning of the raw directory.",
     )
+    parser.add_argument(
+        "--recursive",
+        action="store_true",
+        help="Enable recursive scanning of the raw directory (Default: True).",
+    )
     parser.set_defaults(recursive=True)
     parser.add_argument(
         "--file",
@@ -185,7 +190,7 @@ def parse_pdfinfo(path: Path) -> dict[str, str]:
 
 
 
-def run_micro_ocr(pdf_path: Path, max_pages: int = 3) -> str:
+def run_micro_ocr(pdf_path: Path, max_pages: int = 5) -> str:
     """Perform OCR on the first few pages of a PDF to find identifiers."""
     if not shutil.which("tesseract") or not shutil.which("pdftoppm"):
         return ""
@@ -452,8 +457,32 @@ def process_incoming_file(entry: dict[str, Any], original_path: Path, kb_root: P
 
     # 1. Duplicate Rejection (Phase 0.1)
     file_hash = entry["sha256"]
+    
+    # Only reject if the hash exists and it is NOT this exact file 
+    # (i.e., it exists at a different path)
     if file_hash in existing_hashes:
-        rejected_dir = kb_root / "raw" / "rejected" / "duplicates"
+        # Check if any file in library or manual already has this hash
+        # We need the catalog to check paths
+        catalog_path = kb_root / "artifacts" / "catalog" / "sources.json"
+        is_real_duplicate = False
+        if catalog_path.exists():
+            try:
+                import json
+                catalog = json.loads(catalog_path.read_text())
+                for doc in catalog.get("documents", []):
+                    if doc["sha256"] == file_hash:
+                        # If a file exists at doc["path"] and it is NOT our current path
+                        other_path = kb_root / doc["path"]
+                        if other_path.exists() and other_path.resolve() != original_path.resolve():
+                            is_real_duplicate = True
+                            break
+            except Exception:
+                is_real_duplicate = True # Fallback to safe rejection
+        else:
+            is_real_duplicate = True
+
+        if is_real_duplicate:
+            rejected_dir = kb_root / "raw" / "rejected" / "duplicates"
         rejected_dir.mkdir(parents=True, exist_ok=True)
         new_path = rejected_dir / original_path.name
 
