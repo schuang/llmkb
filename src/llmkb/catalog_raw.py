@@ -372,11 +372,29 @@ def generate_canonical_filename(entry: dict[str, Any], original_ext: str) -> str
     if short_title:
         parts.append(short_title)
         
+    # If we have NO metadata (no authors and no title), 
+    # use the original filename stem (doc_id) as the description.
+    if not author_part and not short_title:
+        fallback = entry.get("doc_id", "untitled")
+        # If the fallback starts with the year we already added, strip it
+        if year and fallback.startswith(str(year)):
+            fallback = fallback[len(str(year)):].lstrip("-_ ")
+        if fallback:
+            parts.append(fallback)
+        
     if not parts:
-        return "untitled-document.pdf"
+        return "untitled-document" + original_ext
         
     raw_name = "-".join(parts)
-    return slugify(raw_name) + original_ext
+    # Final safety: deduplicate adjacent identical slugs (e.g. 1965-1965)
+    slug = slugify(raw_name)
+    slug_parts = slug.split("-")
+    deduped = []
+    for p in slug_parts:
+        if not deduped or p != deduped[-1]:
+            deduped.append(p)
+            
+    return "-".join(deduped) + original_ext
 
 
 def process_incoming_file(entry: dict[str, Any], original_path: Path, kb_root: Path, existing_hashes: set[str]) -> Path:
