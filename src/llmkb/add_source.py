@@ -182,27 +182,34 @@ def parse_pdfinfo(path: Path) -> dict[str, str]:
 
 
 
-def run_micro_ocr(pdf_path: Path) -> str:
-    """Perform OCR on ONLY the first page of a PDF to find identifiers."""
+
+def run_micro_ocr(pdf_path: Path, max_pages: int = 3) -> str:
+    """Perform OCR on the first few pages of a PDF to find identifiers."""
     if not shutil.which("tesseract") or not shutil.which("pdftoppm"):
         return ""
 
+    all_text = []
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir)
-        # Convert ONLY page 1 to image
+        # Convert first few pages to images
         subprocess.run(
-            ["pdftoppm", "-png", "-f", "1", "-l", "1", "-r", "300", str(pdf_path), str(tmp_path / "title")],
+            ["pdftoppm", "-png", "-f", "1", "-l", str(max_pages), "-r", "300", str(pdf_path), str(tmp_path / "page")],
             capture_output=True, check=False
         )
-        img_files = list(tmp_path.glob("*.png"))
-        if not img_files:
-            return ""
-            
-        result = subprocess.run(
-            ["tesseract", str(img_files[0]), "stdout"],
-            capture_output=True, text=True, check=False
-        )
-        return result.stdout if result.returncode == 0 else ""
+        
+        img_files = sorted(tmp_path.glob("*.png"), key=lambda x: x.name)
+        for img in img_files:
+            result = subprocess.run(
+                ["tesseract", str(img), "stdout"],
+                capture_output=True, text=True, check=False
+            )
+            if result.returncode == 0:
+                all_text.append(result.stdout)
+                
+    return "
+
+".join(all_text)
+
 
 
 def extract_identifiers(path: Path) -> tuple[str | None, str | None]:
