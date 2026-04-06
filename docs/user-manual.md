@@ -32,6 +32,15 @@ Once activated, all `llmkb-*` commands are available globally in your terminal.
 
 ---
 
+
+## The Two-Step Workflow: Librarian vs. Processor
+
+The engine separates structural organization from heavy AI processing to keep your experience fast:
+
+1. **Step 1: The Librarian (`llmkb-add`)**: Run this whenever you add or remove physical files. It is nearly instantaneous. It renames your files, updates the catalog, and performs "Micro-OCR" (scanning the first 3 pages) to find identifiers.
+2. **Step 2: The Processor (`llmkb-update`)**: Run this when you are ready to build your research wiki. It performs full OCR, calls LLM APIs for summarization, and builds the concept network. 
+   - *Efficiency*: `llmkb-update` uses intelligent caching. If your files haven't changed, it runs in seconds!
+
 ## Key Directories: Where to put your files
 
 The engine organizes your physical files into three distinct zones within the `raw/` directory. Understanding these zones is the key to using the system effectively:
@@ -54,9 +63,9 @@ Run the organization tool from the root of your knowledge base:
 ```bash
 llmkb-add
 ```
-*(Note: To generate expensive, high-quality summaries for entire books using chapter-by-chapter analysis, use the `--summarize-books` flag)*:
+*(Note: To generate expensive, high-quality summaries for entire books, run the update orchestrator with the `--summarize-books` flag after adding them)*:
 ```bash
-llmkb-add --summarize-books
+llmkb-update --summarize-books
 ```
 
 **The Consequences (What Happens)**:
@@ -79,7 +88,7 @@ llmkb-add --summarize-books
 **DO NOT** rename the file using your operating system's file explorer. Doing so will orphan your extracted text and break all existing `[[source/doc_id]]` links in your Obsidian notes.
 
 **The Command**:
-Use the built-in rename tool:
+Use the built-in rename tool (now with bulletproof collision checks):
 ```bash
 llmkb-rename <old-doc-id> <new-doc-id>
 ```
@@ -107,7 +116,7 @@ llmkb-add
 ```
 
 **The Consequences (What Happens)**:
-1. **Catalog Update**: The `llmkb-catalog` step notices the file is missing from the disk and removes it from the master `sources.json` manifest.
+1. **Catalog Update**: The `llmkb-add` step notices the file is missing from the disk and removes it from the master `sources.json` manifest.
 2. **Garbage Collection**: The `llmkb-clean` step detects that the document is no longer in the catalog. It automatically deletes the orphaned `artifacts/extract/<doc_id>/` folder (freeing up disk space) and deletes the `wiki/source/<doc_id>.md` page.
 3. **Concept Scrubbing**: During the `llmkb-build-concept` phase, the engine rebuilds the concept pages without the deleted document, cleanly erasing its presence from the synthesized knowledge base.
 

@@ -12,7 +12,7 @@ This document tracks unfinished tasks, design gaps, and future improvements for 
 - [x] **Section Chunking**: Implement logical heading-based chunking for reflowable formats in `extract_pages.py`.
 - [x] **OCR Fallback (Tesseract)**: Implement automatic detection of image-only scanned PDFs (e.g., extremely low text-to-page ratio). Convert pages to images via `pdftoppm` and extract text using `tesseract`. Add `ocr_extracted` to `quality_flags` to warn downstream LLM tasks of potential transcription errors.
 - [x] Implement author normalization (currently inconsistent).
-- [ ] Refine near-duplicate detection heuristics and threshold tuning.
+- [x] Refine near-duplicate detection heuristics (implemented path-aware Duplicate Shield and immediate rename pruning).
 - [ ] Add richer extraction quality fields/flags to metadata.
 
 ## Content Generation
@@ -25,7 +25,7 @@ This document tracks unfinished tasks, design gaps, and future improvements for 
 ## Incremental Updates
 - [x] Improve state tracking for incremental rebuilds (implemented hash-based state comparison in `catalog_raw.py`).
 - [x] **Ingestion Reports**: Automatically generate Markdown reports in `wiki/logs/` summarizing all changes and step outputs.
-- [ ] Add richer incremental patching so concept and synthesis pages can be updated selectively when new sources arrive.
+- [x] Add richer incremental patching (implemented search index caching and keyword-based concept generation for instant updates).
 
 ## Synthesis and Q&A
 - [ ] Add higher-quality synthesis workflows using LLMs over retrieved evidence.
