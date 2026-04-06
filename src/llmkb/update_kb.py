@@ -22,6 +22,10 @@ def parse_args() -> argparse.Namespace:
         help="Root directory of the knowledge base.",
     )
     parser.add_argument(
+        "--no-recursive", action="store_false", dest="recursive", help="Disable recursive scanning of the raw directory."
+    )
+    parser.set_defaults(recursive=True)
+    parser.add_argument(
         "--force", action="store_true", help="Force rebuilds in extraction, source pages, and concept pages."
     )
     parser.add_argument("--summarize-books", action="store_true", help="Enable expensive chapter-by-chapter book summarization.")
@@ -69,7 +73,7 @@ def generate_report(context: KBContext, results: dict[str, str]) -> Path | None:
     
     # Try to parse stats from common output formats
     for step, output in results.items():
-        if output.strip():
+        if isinstance(output, str) and output.strip():
             lines.append(f"### {step.replace('.py', '').title()}")
             lines.append(f"```\n{output.strip()}\n```")
             lines.append("")
@@ -99,7 +103,10 @@ def main() -> None:
     results = {}
     
     # 1. Cataloging & Cleaning (Structural)
-    results["catalog"] = run_step("catalog_raw.py", ["--kb-root", args.kb_root])
+    catalog_args = ["--kb-root", args.kb_root]
+    if args.recursive:
+        catalog_args.append("--recursive")
+    results["catalog"] = run_step("catalog_raw.py", catalog_args)
     results["clean"] = run_step("clean_kb.py", ["--kb-root", args.kb_root])
     
     # 2. Extraction & Resolution (Heavy processing)

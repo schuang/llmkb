@@ -274,22 +274,32 @@ def stub_page(document: dict[str, Any]) -> str:
 def build_page(document: dict[str, Any], pages: list[dict[str, Any]], model: str = None, summarize_books: bool = False) -> tuple[str, dict[str, Any]]:
     title = document.get("title") or document["doc_id"]
     author = document.get("author")
+    chapters = (
+        compile_book_chapters(document["doc_id"], title, pages)
+        if document.get("source_class") == "book"
+        else []
+    )
     
-    # Use LLM for intelligent summarization
-    if model and LITELLM_AVAILABLE:
-        # Give the LLM the first 15k characters of the document
+    summary = ""
+    is_book = document.get("source_class") == "book"
+    
+    if is_book and summarize_books and model and LITELLM_AVAILABLE:
+        summary = summarize_book_map_reduce(title, chapters, pages, model)
+    elif not is_book and model and LITELLM_AVAILABLE:
+        # Paper summary (first 10 pages)
         text_chunk = "\n".join([p.get("text", "") for p in pages[:10]])[:15000]
         if text_chunk.strip():
-            print(f"  Summarizing '{document['doc_id']}' via LLM...")
+            print(f"  Summarizing paper '{document['doc_id']}' via LLM...")
             summary = summarize_with_llm(title, text_chunk, model)
         else:
             summary = "No text available to summarize."
     else:
-        # Fallback to the old deterministic heuristic
-        # Handled below
+        # Fallback to deterministic summary
+        summary = summarize_pages(title, pages, source_class=document.get("source_class"))
+
     keywords = extract_keywords(title, author, pages, source_class=document.get("source_class"))
-    # chapters already compiled above
     relationships = format_relationship(document)
+
     top_previews = [
         {
             "page_number": page["page_number"],
