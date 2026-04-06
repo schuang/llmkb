@@ -7,7 +7,7 @@ This document tracks unfinished tasks, design gaps, and future improvements for 
 - [x] Build `metadata_resolver.py` to query Crossref and Open Library APIs.
 - [x] Integrate API resolution into `llmkb-catalog`.
 - [x] **Multi-Format Support**: Update `catalog_raw.py` to scan for `.epub`, `.docx`, `.md`, `.txt`, `.rst`, `.html`.
-- [ ] Implement LLM-based metadata extraction fallback.
+- [x] Implement LLM-based metadata extraction fallback.
 - [ ] **Unified Extraction**: Refactor `extract_pages.py` to use `pandoc` for non-PDF formats.
 - [ ] **Section Chunking**: Implement logical heading-based chunking for reflowable formats in `extract_pages.py`.
 - [x] **OCR Fallback (Tesseract)**: Implement automatic detection of image-only scanned PDFs (e.g., extremely low text-to-page ratio). Convert pages to images via `pdftoppm` and extract text using `tesseract`. Add `ocr_extracted` to `quality_flags` to warn downstream LLM tasks of potential transcription errors.

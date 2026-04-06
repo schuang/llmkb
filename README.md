@@ -1,4 +1,4 @@
-# LLM Knowledge Base Engine (`llmkb`)
+# llmkb
 
 [![Unit Tests](https://github.com/schuang/llmkb/actions/workflows/test.yml/badge.svg)](https://github.com/schuang/llmkb/actions/workflows/test.yml)
 
@@ -47,9 +47,9 @@ The engine will automatically catalog your files, extract their text, and genera
 
 ## Documentation
 
-- **[User Manual](docs/user-manual.md)**: **Recommended Reading.** Daily workflows for adding, renaming, moving, and deleting documents.
-- **[Architecture & Pipeline](docs/architecture.md)**: Deep dive into the system design, pipeline stages, and "Librarian vs. Researcher" philosophy.
-- **[Schema Reference](docs/schema.md)**: Detailed specifications for JSON artifacts and generated Markdown.
+- **[User Manual](docs/user-manual.md)**: Daily workflows for adding, renaming, moving, and deleting documents.
+- **[Architecture & Pipeline](docs/architecture.md)**: The system design, pipeline stages, and "Librarian vs. Researcher" philosophy.
+- **[Schema Reference](docs/schema.md)**: Specifications for JSON artifacts and generated Markdown.
 - **[Multi-Format Plan](docs/multi-format-support.md)**: The technical roadmap for non-PDF document support.
 
 ## CLI Reference
