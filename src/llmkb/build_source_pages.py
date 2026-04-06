@@ -240,9 +240,22 @@ def build_page(document: dict[str, Any], pages: list[dict[str, Any]]) -> tuple[s
 
     lines.extend(["", "## Page Anchors", ""])
     for page in pages:
+        page_id = page["page_number"]
+        # If it's a numeric page (PDF), prefix with 'p'. 
+        # If it's a string slug (ePub/Word), use as is.
+        if isinstance(page_id, int) or (isinstance(page_id, str) and page_id.isdigit()):
+            anchor = f"p{page_id}"
+            display_title = anchor
+        else:
+            anchor = page_id
+            # Use section_title if available, otherwise capitalize slug
+            display_title = page.get("section_title") or anchor.replace("-", " ").capitalize()
+            
         lines.extend(
             [
-                f"### p{page['page_number']}",
+                f"### {display_title}",
+                "",
+                f"Anchor: #{anchor}",
                 "",
                 page["preview"] or "No preview available.",
                 "",
