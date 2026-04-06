@@ -84,10 +84,12 @@ def parse_args() -> argparse.Namespace:
         help="Optional JSON file with per-document metadata overrides. Defaults to <kb-root>/config/source_overrides.json",
     )
     parser.add_argument(
-        "--recursive",
-        action="store_true",
-        help="Optional: Scan the raw directory recursively (including all subdirectories). Defaults to false.",
+        "--no-recursive",
+        action="store_false",
+        dest="recursive",
+        help="Disable recursive scanning of the raw directory.",
     )
+    parser.set_defaults(recursive=True)
     parser.add_argument(
         "--file",
         type=Path,
