@@ -127,6 +127,26 @@ llmkb-update
 
 ---
 
+## Scenario 6: Exporting to Zotero
+
+**The Goal**: You want your academic reference manager (like Zotero) to automatically sync with your LLM Knowledge Base so you can cite papers in LaTeX or Word.
+
+**The Action**:
+Run the BibTeX export command.
+
+**The Command**:
+```bash
+llmkb-export
+```
+
+**The Consequences (What Happens)**:
+1. **Compilation**: The engine reads your `sources.json` catalog and filters out any informal or rejected documents.
+2. **BibTeX Generation**: It generates a perfectly formatted `library.bib` file in `artifacts/compile/library.bib`.
+3. **Smart Linking**: It automatically injects a `note` field into every BibTeX entry containing the Obsidian link (`LLMKB: [[source/<doc_id>]]`).
+4. **Zotero Sync**: If you use Zotero with the **Better BibTeX** plugin, you can tell Zotero to "Import" and "Keep Updated" this specific `.bib` file. Every time you run `llmkb-export`, Zotero will instantly absorb your new research!
+
+---
+
 ## Scenario 5: Rejecting/Archiving a Document
 
 **The Goal**: You want to remove a low-quality or irrelevant document from your active wiki and search index, but you want to keep the physical file in a "rejected" folder rather than deleting it.

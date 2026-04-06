@@ -34,7 +34,7 @@ This document tracks unfinished tasks, design gaps, and future improvements for 
 - [x] Add a dummy test suite with public-domain PDFs (implemented `tests/` with unit and live API mocks).
 - [x] **Managed Ingestion**: Implement auto-renaming and moving from `raw/incoming/` to `raw/library/`.
 - [x] **Duplicate Shield**: Prevent duplicate files from being added during ingestion.
-- [ ] **Zotero Integration**: Create `src/llmkb/export_bibtex.py` to generate a `.bib` file from the catalog for Zotero auto-sync.
+- [x] **Zotero Integration**: Create `src/llmkb/export_bibtex.py` to generate a `.bib` file from the catalog for Zotero auto-sync.
 - [x] **Soft Deletion (`llmkb-reject`)**: Implement a CLI command to safely archive/reject low-quality sources.
 - [ ] Add linting and formatting (e.g., `ruff`, `black`) to the engine codebase.
 - [ ] Consider migrating from `argparse` to a more robust CLI framework (e.g., `Click` or `Typer`).
