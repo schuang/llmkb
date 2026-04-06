@@ -87,6 +87,12 @@ def generate_bibtex_entry(doc: dict[str, Any]) -> str | None:
     if isbn:
         lines.append(f"  isbn = {{{isbn}}},")
         
+    # Link the physical file. Better BibTeX can resolve this if Zotero's 
+    # "Linked Attachment Base Directory" is set to the KB root.
+    file_path = doc.get("path")
+    if file_path:
+        lines.append(f"  file = {{{file_path}}},")
+        
     # We also inject a special field pointing back to our local KB wiki note!
     # This allows Zotero to link directly to your LLM summaries.
     lines.append(f"  note = {{LLMKB: [[source/{doc_id}]]}},")

@@ -143,7 +143,9 @@ llmkb-export
 1. **Compilation**: The engine reads your `sources.json` catalog and filters out any informal or rejected documents.
 2. **BibTeX Generation**: It generates a perfectly formatted `library.bib` file in `artifacts/compile/library.bib`.
 3. **Smart Linking**: It automatically injects a `note` field into every BibTeX entry containing the Obsidian link (`LLMKB: [[source/<doc_id>]]`).
-4. **Zotero Sync**: If you use Zotero with the **Better BibTeX** plugin, you can tell Zotero to "Import" and "Keep Updated" this specific `.bib` file. Every time you run `llmkb-export`, Zotero will instantly absorb your new research!
+4. **Local PDF Linking**: The `.bib` file includes a `file = {raw/library/...}` field. This prevents Zotero from uploading your PDFs to its cloud storage. Instead, it creates a "Linked Attachment." 
+   - **Crucial Step**: In Zotero, go to *Preferences* -> *Advanced* -> *Files and Folders* and set your **Linked Attachment Base Directory** to the root folder of your knowledge base (e.g., `~/work/kb`). Zotero will instantly resolve the relative paths and allow you to open the PDFs directly from its UI!
+5. **Zotero Sync**: If you use Zotero with the **Better BibTeX** plugin, you can tell Zotero to "Import" and "Keep Updated" this specific `.bib` file. Every time you run `llmkb-export`, Zotero will instantly absorb your new research!
 
 ---
 
