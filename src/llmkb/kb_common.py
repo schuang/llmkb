@@ -511,6 +511,41 @@ NOISY_PREVIEWS = {
 }
 
 
+def normalize_author_string(author_str: str | None) -> str | None:
+    """Normalize messy author strings from various APIs into a standard format.
+    
+    Transforms:
+    - "Last, First" -> "First Last"
+    - "J.Smith" -> "J. Smith"
+    - "J.R. Tolkien" -> "J. R. Tolkien"
+    - "Moser, Robert D.; Kim, John" -> "Robert D. Moser; John Kim"
+    """
+    if not author_str:
+        return None
+        
+    authors = [a.strip() for a in author_str.split(";") if a.strip()]
+    normalized = []
+    
+    for author in authors:
+        # Handle "Last, First" format from Crossref/DataCite
+        if "," in author:
+            parts = [p.strip() for p in author.split(",")]
+            if len(parts) == 2:
+                author = f"{parts[1]} {parts[0]}"
+                
+        # Clean up weird spacing
+        author = re.sub(r'\s+', ' ', author)
+        
+        # Ensure initials have a space after the period if followed by a letter (e.g., "J.Smith" -> "J. Smith")
+        author = re.sub(r'([A-Z]\.)([A-Z][a-z])', r'\1 \2', author)
+        
+        # Ensure initials have a space between them (e.g., "J.R. Smith" -> "J. R. Smith")
+        author = re.sub(r'([A-Z]\.)([A-Z]\.)', r'\1 \2', author)
+        
+        normalized.append(author.strip())
+        
+    return "; ".join(normalized)
+
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 

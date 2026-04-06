@@ -25,7 +25,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from llmkb.kb_common import KBContext, extract_doi, extract_isbn, slugify
+from llmkb.kb_common import KBContext, extract_doi, extract_isbn, slugify, normalize_author_string
 from llmkb.metadata_resolver import resolve_doi, resolve_isbn
 
 
@@ -491,6 +491,8 @@ def build_entry(path: Path, kb_root: Path, probe_text: bool, existing_hashes: se
         title = pdfinfo.get("Title") or None
         author = pdfinfo.get("Author") or None
         publisher = pdfinfo.get("Producer") or None
+
+    author = normalize_author_string(author)
 
     entry: dict[str, Any] = {
         "doc_id": doc_id,
