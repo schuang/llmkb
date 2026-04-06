@@ -491,6 +491,13 @@ def main() -> None:
     ensure_directory(index_output.parent)
     ensure_directory(chapter_output.parent)
     previous_state = load_state(state_output)
+    previous_index = {}
+    if index_output.exists():
+        try:
+            old_index_docs = load_json(index_output)
+            previous_index = {doc["doc_id"]: doc for doc in old_index_docs}
+        except Exception:
+            pass
     resolution_payload = load_json(resolution_path) if resolution_path.exists() else {"documents": []}
 
     documents = load_json(catalog_path)["documents"]
@@ -544,23 +551,31 @@ def main() -> None:
                     }
                 )
             else:
-                # Preserve index rebuild even when page markdown is unchanged.
-                if paths["pages"].exists():
+                # Reuse existing index entry if available to avoid re-summarization
+                if doc_id in previous_index:
+                    index_entry = previous_index[doc_id]
+                    index_documents.append(index_entry)
+                    chapter_documents.append({
+                        "doc_id": doc_id,
+                        "title": index_entry["title"],
+                        "source_class": document["source_class"],
+                        "wiki_link": index_entry["wiki_link"],
+                        "chapters": index_entry.get("chapters", []),
+                    })
+                elif paths["pages"].exists():
                     payload = load_json(paths["pages"])
                     pages = payload.get("pages", [])
                     _, index_entry = build_page(document, pages, args.model, args.summarize_books)
                     index_entry["is_redundant"] = False
                     index_entry["dedupe_kind"] = None
                     index_documents.append(index_entry)
-                    chapter_documents.append(
-                        {
-                            "doc_id": doc_id,
-                            "title": index_entry["title"],
-                            "source_class": document["source_class"],
-                            "wiki_link": index_entry["wiki_link"],
-                            "chapters": index_entry.get("chapters", []),
-                        }
-                    )
+                    chapter_documents.append({
+                        "doc_id": doc_id,
+                        "title": index_entry["title"],
+                        "source_class": document["source_class"],
+                        "wiki_link": index_entry["wiki_link"],
+                        "chapters": index_entry.get("chapters", []),
+                    })
             continue
 
         if document["is_redundant"]:
