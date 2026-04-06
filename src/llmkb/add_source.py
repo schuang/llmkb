@@ -206,9 +206,7 @@ def run_micro_ocr(pdf_path: Path, max_pages: int = 3) -> str:
             if result.returncode == 0:
                 all_text.append(result.stdout)
                 
-    return "
-
-".join(all_text)
+    return "\n\f\n".join(all_text)
 
 
 
