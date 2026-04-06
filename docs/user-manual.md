@@ -110,14 +110,15 @@ llmkb-rename <old-doc-id> <new-doc-id>
 Delete the physical PDF file from the `raw/library/` (or `raw/manual/`) directory using your operating system's file explorer (e.g., move it to your computer's Trash).
 
 **The Command**:
-Run the organization tool:
+Synchronize your changes by running the organization tool:
 ```bash
 llmkb-add
 ```
+*(Note: You can also just run `llmkb-update`, which performs this synchronization step automatically before updating the wiki).*
 
 **The Consequences (What Happens)**:
-1. **Catalog Update**: The `llmkb-add` step notices the file is missing from the disk and removes it from the master `sources.json` manifest.
-2. **Garbage Collection**: The `llmkb-clean` step detects that the document is no longer in the catalog. It automatically deletes the orphaned `artifacts/extract/<doc_id>/` folder (freeing up disk space) and deletes the `wiki/source/<doc_id>.md` page.
+1. **Catalog Sync**: The `llmkb-add` tool scans your folders and notices the file is missing from the disk. It then removes the corresponding entry from the master `sources.json` manifest.
+2. **Garbage Collection**: Once the catalog is updated, the engine's cleaning logic detects that the document is no longer "active." It automatically deletes the orphaned `artifacts/extract/<doc_id>/` folder and the `wiki/source/<doc_id>.md` page.
 3. **Concept Scrubbing**: During the `llmkb-build-concept` phase, the engine rebuilds the concept pages without the deleted document, cleanly erasing its presence from the synthesized knowledge base.
 
 ---
@@ -130,7 +131,7 @@ llmkb-add
 Move the physical file using your operating system's file explorer.
 
 **The Command**:
-Run the organization tool:
+Synchronize your changes by running the organization tool:
 ```bash
 llmkb-add
 ```
