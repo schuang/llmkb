@@ -16,7 +16,7 @@ This document tracks unfinished tasks, design gaps, and future improvements for 
 - [ ] Add richer extraction quality fields/flags to metadata.
 
 ## Content Generation
-- [ ] Reduce noise in source summaries.
+- [x] Reduce noise in source summaries (integrated LLM semantic summarization).
 - [ ] Improve concept candidate selection and naming.
 - [ ] Add generated timestamps to all markdown page types (currently missing on some).
 - [ ] Implement normalized `kind` and `status` fields for synthesis pages.

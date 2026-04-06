@@ -3,6 +3,15 @@
 from __future__ import annotations
 
 import argparse
+
+try:
+    from litellm import completion
+    LITELLM_AVAILABLE = True
+except ImportError:
+    LITELLM_AVAILABLE = False
+
+import os
+from dotenv import load_dotenv
 from pathlib import Path
 from typing import Any
 
@@ -64,8 +73,40 @@ def parse_args() -> argparse.Namespace:
         help="Path to write the state JSON. Defaults to <kb-root>/artifacts/compile/source_pages_state.json",
     )
     parser.add_argument("--doc-id", action="append", default=[], help="Limit build to selected doc_ids.")
+    parser.add_argument("--model", default=os.environ.get("LLM_MODEL", "gemini/gemini-2.5-flash"), help="LiteLLM model string.")
     parser.add_argument("--force", action="store_true", help="Regenerate all selected source pages.")
     return parser.parse_args()
+
+
+
+def summarize_with_llm(title: str, text_chunk: str, model: str) -> str:
+    """Use an LLM to generate a concise, human-readable summary of the document."""
+    if not LITELLM_AVAILABLE:
+        return "LLM extraction skipped: litellm not installed."
+        
+    prompt = f"""
+You are an expert academic research assistant. 
+Read the following excerpt from the beginning of a document titled "{title}".
+
+Write a single, highly concise paragraph (maximum 4 sentences) summarizing the core topic, methodology, or findings of the text. 
+Focus only on high-signal academic information. Do NOT include phrases like "This document discusses" or "The text covers".
+Just state the facts directly.
+
+TEXT EXCERPT:
+================
+{text_chunk}
+================
+"""
+    try:
+        response = completion(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"  Warning: LLM summarization failed: {e}")
+        return "LLM summarization failed."
 
 
 def should_process(doc_id_filters: list[str], doc_id: str) -> bool:
@@ -154,10 +195,22 @@ def stub_page(document: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def build_page(document: dict[str, Any], pages: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
+def build_page(document: dict[str, Any], pages: list[dict[str, Any]], model: str = None) -> tuple[str, dict[str, Any]]:
     title = document.get("title") or document["doc_id"]
     author = document.get("author")
-    summary = summarize_pages(title, pages, source_class=document.get("source_class"))
+    
+    # Use LLM for intelligent summarization
+    if model and LITELLM_AVAILABLE:
+        # Give the LLM the first 15k characters of the document
+        text_chunk = "\n".join([p.get("text", "") for p in pages[:10]])[:15000]
+        if text_chunk.strip():
+            print(f"  Summarizing '{document['doc_id']}' via LLM...")
+            summary = summarize_with_llm(title, text_chunk, model)
+        else:
+            summary = "No text available to summarize."
+    else:
+        # Fallback to the old deterministic heuristic
+        summary = summarize_pages(title, pages, source_class=document.get("source_class"))
     keywords = extract_keywords(title, author, pages, source_class=document.get("source_class"))
     chapters = (
         compile_book_chapters(document["doc_id"], title, pages)
@@ -337,8 +390,14 @@ def best_matching_pages(query: str, pages: list[dict[str, Any]], limit: int = 3)
 
 
 def main() -> None:
+    load_dotenv()
+    load_dotenv(Path.home() / ".env")
+    
     args = parse_args()
     context = KBContext(args.kb_root)
+    
+    if "gemini" in args.model.lower() and not os.environ.get("GEMINI_API_KEY"):
+        print("Warning: GEMINI_API_KEY not found. LLM summarization will fail.")
     wiki_source_dir = args.wiki_source_dir or context.source_wiki_dir
     index_output = args.index_output or context.search_index_path
     chapter_output = args.chapter_output or context.chapter_index_path
@@ -407,7 +466,7 @@ def main() -> None:
                 if paths["pages"].exists():
                     payload = load_json(paths["pages"])
                     pages = payload.get("pages", [])
-                    _, index_entry = build_page(document, pages)
+                    _, index_entry = build_page(document, pages, args.model)
                     index_entry["is_redundant"] = False
                     index_entry["dedupe_kind"] = None
                     index_documents.append(index_entry)
@@ -462,7 +521,7 @@ def main() -> None:
 
         payload = load_json(paths["pages"])
         pages = payload.get("pages", [])
-        markdown, index_entry = build_page(document, pages)
+        markdown, index_entry = build_page(document, pages, args.model)
         index_entry["is_redundant"] = False
         index_entry["dedupe_kind"] = None
         page_path.write_text(markdown)
