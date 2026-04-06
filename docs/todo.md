@@ -17,12 +17,14 @@ This document tracks unfinished tasks, design gaps, and future improvements for 
 
 ## Content Generation
 - [x] Reduce noise in source summaries (integrated LLM semantic summarization).
+- [x] **Map-Reduce Book Summarization**: Implemented gated chapter-by-chapter summarization to capture whole-book context without token limit issues.
 - [ ] Improve concept candidate selection and naming.
 - [ ] Add generated timestamps to all markdown page types (currently missing on some).
 - [ ] Implement normalized `kind` and `status` fields for synthesis pages.
 
 ## Incremental Updates
 - [x] Improve state tracking for incremental rebuilds (implemented hash-based state comparison in `catalog_raw.py`).
+- [x] **Ingestion Reports**: Automatically generate Markdown reports in `wiki/logs/` summarizing all changes and step outputs.
 - [ ] Add richer incremental patching so concept and synthesis pages can be updated selectively when new sources arrive.
 
 ## Synthesis and Q&A

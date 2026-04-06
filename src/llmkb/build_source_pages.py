@@ -73,10 +73,86 @@ def parse_args() -> argparse.Namespace:
         help="Path to write the state JSON. Defaults to <kb-root>/artifacts/compile/source_pages_state.json",
     )
     parser.add_argument("--doc-id", action="append", default=[], help="Limit build to selected doc_ids.")
+    parser.add_argument("--summarize-books", action="store_true", help="Enable expensive LLM-powered chapter-by-chapter book summarization.")
     parser.add_argument("--model", default=os.environ.get("LLM_MODEL", "gemini/gemini-2.5-flash"), help="LiteLLM model string.")
     parser.add_argument("--force", action="store_true", help="Regenerate all selected source pages.")
     return parser.parse_args()
 
+
+
+
+def summarize_chapter_with_llm(title: str, chapter_title: str, text_chunk: str, model: str) -> str:
+    """Summarize a single chapter using LLM."""
+    prompt = f"""
+You are an expert academic research assistant. 
+Read the following excerpt from a chapter titled "{chapter_title}" from the book "{title}".
+
+Write a single, highly concise sentence summarizing the core objective or finding of this specific chapter.
+Do NOT use intro phrases. Just the fact.
+
+CHAPTER TEXT:
+================
+{text_chunk}
+================
+"""
+    try:
+        from litellm import completion
+        response = completion(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        return ""
+
+def summarize_book_map_reduce(title: str, chapters: list[dict[str, Any]], pages: list[dict[str, Any]], model: str) -> str:
+    """Summarize a book by first summarizing its chapters (Map) and then combining them (Reduce)."""
+    chapter_summaries = []
+    
+    print(f"    Map-Reduce: Summarizing {len(chapters)} chapters...")
+    for i, chapter in enumerate(chapters):
+        # Find pages for this chapter
+        # chapters have page_start/page_end which might be ints or strings
+        # For now, let's just grab the first page of the chapter
+        start_page_val = chapter.get("page_start")
+        chapter_pages = [p for p in pages if p["page_number"] == start_page_val]
+        if not chapter_pages:
+            continue
+            
+        text_chunk = chapter_pages[0].get("text", "")[:4000]
+        if not text_chunk.strip():
+            continue
+            
+        print(f"      Summarizing Chapter {chapter.get('chapter_number', i+1)}: {chapter.get('title')}...", end="\r")
+        summary = summarize_chapter_with_llm(title, chapter.get("title", ""), text_chunk, model)
+        if summary:
+            chapter_summaries.append(f"Chapter {chapter.get('chapter_number', i+1)} ({chapter.get('title')}): {summary}")
+    
+    print("\n    Map-Reduce: Generating final book summary...")
+    combined_chapters = "\n".join(chapter_summaries)
+    
+    prompt = f"""
+You are an expert academic research assistant. 
+Here are the summaries of the chapters of a book titled "{title}":
+
+{combined_chapters}
+
+Based on these chapter summaries, write a concise, high-level summary of the entire book (maximum 5 sentences).
+Focus on the overall thesis, methodology, and target audience.
+Do NOT use intro phrases. Just the facts.
+"""
+    try:
+        from litellm import completion
+        response = completion(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"      Warning: Map-Reduce final step failed: {e}")
+        return "Book summary generation failed."
 
 
 def summarize_with_llm(title: str, text_chunk: str, model: str) -> str:
@@ -195,7 +271,7 @@ def stub_page(document: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def build_page(document: dict[str, Any], pages: list[dict[str, Any]], model: str = None) -> tuple[str, dict[str, Any]]:
+def build_page(document: dict[str, Any], pages: list[dict[str, Any]], model: str = None, summarize_books: bool = False) -> tuple[str, dict[str, Any]]:
     title = document.get("title") or document["doc_id"]
     author = document.get("author")
     
@@ -210,13 +286,9 @@ def build_page(document: dict[str, Any], pages: list[dict[str, Any]], model: str
             summary = "No text available to summarize."
     else:
         # Fallback to the old deterministic heuristic
-        summary = summarize_pages(title, pages, source_class=document.get("source_class"))
+        # Handled below
     keywords = extract_keywords(title, author, pages, source_class=document.get("source_class"))
-    chapters = (
-        compile_book_chapters(document["doc_id"], title, pages)
-        if document.get("source_class") == "book"
-        else []
-    )
+    # chapters already compiled above
     relationships = format_relationship(document)
     top_previews = [
         {
@@ -466,7 +538,7 @@ def main() -> None:
                 if paths["pages"].exists():
                     payload = load_json(paths["pages"])
                     pages = payload.get("pages", [])
-                    _, index_entry = build_page(document, pages, args.model)
+                    _, index_entry = build_page(document, pages, args.model, args.summarize_books)
                     index_entry["is_redundant"] = False
                     index_entry["dedupe_kind"] = None
                     index_documents.append(index_entry)
@@ -521,7 +593,7 @@ def main() -> None:
 
         payload = load_json(paths["pages"])
         pages = payload.get("pages", [])
-        markdown, index_entry = build_page(document, pages, args.model)
+        markdown, index_entry = build_page(document, pages, args.model, args.summarize_books)
         index_entry["is_redundant"] = False
         index_entry["dedupe_kind"] = None
         page_path.write_text(markdown)

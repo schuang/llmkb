@@ -54,6 +54,10 @@ Run the update orchestrator from the root of your knowledge base:
 ```bash
 llmkb-update
 ```
+*(Note: To generate expensive, high-quality summaries for entire books using chapter-by-chapter analysis, use the `--summarize-books` flag)*:
+```bash
+llmkb-update --summarize-books
+```
 
 **The Consequences (What Happens)**:
 1. **Duplicate Shield**: The engine immediately computes the SHA-256 hash of the file. If you already have this exact file in your library, it stops processing and moves the file to `raw/rejected/duplicates/`.
@@ -61,6 +65,7 @@ llmkb-update
 3. **Auto-Renaming**: It generates a strict, lowercase, dash-separated filename (e.g., `2017-vaswani-etal-attention-is-all.pdf`).
 4. **Moving**: It physically moves the file from `raw/incoming/` to `raw/library/` using the new canonical name.
 5. **Processing**: It extracts the full text, generates a `wiki/source/<doc_id>.md` summary page, and uses the LLM to weave its text into your `wiki/concepts/` pages.
+6. **Ingestion Report**: A permanent record of the run is created in **`wiki/logs/ingest-YYYY-MM-DD.md`**, capturing exactly which files were processed and any warnings encountered.
 
 *(Note: If the document is an unpublished manuscript without a DOI/ISBN, the engine falls back to heuristic/LLM extraction, but still processes it into your wiki).*
 
