@@ -22,6 +22,8 @@ import hashlib
 import json
 import re
 import subprocess
+import tempfile
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -179,6 +181,30 @@ def parse_pdfinfo(path: Path) -> dict[str, str]:
     return metadata
 
 
+
+def run_micro_ocr(pdf_path: Path) -> str:
+    """Perform OCR on ONLY the first page of a PDF to find identifiers."""
+    if not shutil.which("tesseract") or not shutil.which("pdftoppm"):
+        return ""
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        # Convert ONLY page 1 to image
+        subprocess.run(
+            ["pdftoppm", "-png", "-f", "1", "-l", "1", "-r", "300", str(pdf_path), str(tmp_path / "title")],
+            capture_output=True, check=False
+        )
+        img_files = list(tmp_path.glob("*.png"))
+        if not img_files:
+            return ""
+            
+        result = subprocess.run(
+            ["tesseract", str(img_files[0]), "stdout"],
+            capture_output=True, text=True, check=False
+        )
+        return result.stdout if result.returncode == 0 else ""
+
+
 def extract_identifiers(path: Path) -> tuple[str | None, str | None]:
     """Skim the beginning of a document to extract DOI and ISBN identifiers.
     
@@ -199,6 +225,11 @@ def extract_identifiers(path: Path) -> tuple[str | None, str | None]:
         )
         if result.returncode == 0:
             text = result.stdout
+            
+        # If text is empty/useless, trigger Micro-OCR on the title page
+        if len(text.strip()) < 50:
+            print(f"  Identifier check: No text layer found in {path.name}. Running Micro-OCR...")
+            text = run_micro_ocr(path)
     elif ext in {".epub", ".docx"}:
         # Use pandoc to quickly dump plain text
         result = subprocess.run(
