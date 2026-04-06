@@ -112,7 +112,7 @@ llmkb-update
 
 **The Goal**: You want to move a file from `raw/library/` to `raw/manual/` so the engine stops trying to manage its filename.
 
-**The Action**: 
+**The Action**:
 Move the physical file using your operating system's file explorer.
 
 **The Command**:
@@ -124,3 +124,25 @@ llmkb-update
 **The Consequences (What Happens)**:
 1. **Hash Matching**: The cataloger sees a "Missing" file at the old path and a "New" file at the new path. Because the SHA-256 hash is identical, the engine immediately recognizes it's the exact same file.
 2. **Path Update**: It simply updates the `path` field in `sources.json`. It **does not** re-extract the text or consume any LLM tokens. All your existing Markdown links continue to work flawlessly because the `doc_id` did not change.
+
+---
+
+## Scenario 5: Rejecting/Archiving a Document
+
+**The Goal**: You want to remove a low-quality or irrelevant document from your active wiki and search index, but you want to keep the physical file in a "rejected" folder rather than deleting it.
+
+**The Action**:
+Run the rejection command with the `doc_id` of the document.
+
+**The Command**:
+```bash
+llmkb-reject <doc_id> --reason "Irrelevant content"
+```
+
+**The Consequences (What Happens)**:
+1. **File Move**: The physical file is moved from its current location (e.g., `raw/library/`) to **`raw/rejected/`**.
+2. **Override Update**: An entry is added to `config/source_overrides.json` marking the status as `rejected`. This ensures that even if you manually move the file back, the engine remembers it was rejected.
+3. **Automated Cleanup**: You should run `llmkb-update` immediately after. The engine will:
+    - Remove the document from the master `sources.json` catalog (because it ignores the `rejected/` folder).
+    - Trigger `llmkb-clean` to delete the orphaned extracted text and the generated `wiki/source/` page.
+    - Scrub the document from all `wiki/concepts/` pages.

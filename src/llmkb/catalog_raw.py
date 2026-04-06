@@ -640,7 +640,9 @@ def main() -> None:
     if not pdf_paths:
         file_iterator = raw_dir.rglob("*") if args.recursive else raw_dir.glob("*")
         pdf_paths = sorted(
-            [p for p in file_iterator if p.is_file() and p.suffix.lower() in SUPPORTED_EXTENSIONS]
+            [p for p in file_iterator 
+             if p.is_file() and p.suffix.lower() in SUPPORTED_EXTENSIONS 
+             and "rejected" not in p.parts]
         )
     
     entries = []
