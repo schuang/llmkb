@@ -40,7 +40,7 @@ pip install -e .
 3. **Run Update**:
    ```bash
    cd /path/to/your/knowledge-base
-   llmkb-update
+   llmkb-add
    ```
 
 The engine will automatically catalog your files, extract their text, and generate a searchable research wiki in the `wiki/` directory.
@@ -54,8 +54,8 @@ The engine will automatically catalog your files, extract their text, and genera
 
 ## CLI Reference
 
-- `llmkb-update`: Runs the full end-to-end update pipeline.
-- `llmkb-catalog`: Scans files, resolves metadata, and builds the manifest.
+- `llmkb-add`: Runs the full end-to-end update pipeline.
+- `llmkb-add`: Scans files (inc. `raw/incoming/`), resolves metadata, auto-renames/moves, and builds the manifest.
 - `llmkb-clean`: Garbage collects artifacts and wiki pages for removed files.
 - `llmkb-recover-metadata`: Uses an LLM to recover missing metadata from OCR'd text and automatically rename files.
 - `llmkb-rename`: Safely renames a `doc_id` and heals all wiki links.

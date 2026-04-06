@@ -50,13 +50,13 @@ The engine organizes your physical files into three distinct zones within the `r
 Copy or move the raw file (e.g., `random_download_123.pdf`) into the **`raw/incoming/`** directory.
 
 **The Command**:
-Run the update orchestrator from the root of your knowledge base:
+Run the organization tool from the root of your knowledge base:
 ```bash
-llmkb-update
+llmkb-add
 ```
 *(Note: To generate expensive, high-quality summaries for entire books using chapter-by-chapter analysis, use the `--summarize-books` flag)*:
 ```bash
-llmkb-update --summarize-books
+llmkb-add --summarize-books
 ```
 
 **The Consequences (What Happens)**:
@@ -64,7 +64,7 @@ llmkb-update --summarize-books
 2. **Metadata Resolution**: It extracts the first few pages and scans for a DOI or ISBN. It then queries free academic APIs (Crossref or Open Library) to retrieve the perfect, canonical metadata (Title, Authors, Journal, Year).
 3. **Auto-Renaming**: It generates a strict, lowercase, dash-separated filename (e.g., `2017-vaswani-etal-attention-is-all.pdf`).
 4. **Moving**: It physically moves the file from `raw/incoming/` to `raw/library/` using the new canonical name.
-5. **Processing**: It extracts the full text, generates a `wiki/source/<doc_id>.md` summary page, and uses the LLM to weave its text into your `wiki/concepts/` pages.
+5. **Cataloging**: It updates the master `sources.json` manifest. Note: Heavy processing (OCR, LLM summaries) only happens when you run `llmkb-update` later.
 6. **Ingestion Report**: A permanent record of the run is created in **`wiki/logs/ingest-YYYY-MM-DD.md`**, capturing exactly which files were processed and any warnings encountered.
 
 *(Note: If the document is an unpublished manuscript without a DOI/ISBN, the engine falls back to heuristic/LLM extraction, but still processes it into your wiki).*
@@ -101,9 +101,9 @@ llmkb-rename <old-doc-id> <new-doc-id>
 Delete the physical PDF file from the `raw/library/` (or `raw/manual/`) directory using your operating system's file explorer (e.g., move it to your computer's Trash).
 
 **The Command**:
-Run the update orchestrator:
+Run the organization tool:
 ```bash
-llmkb-update
+llmkb-add
 ```
 
 **The Consequences (What Happens)**:
@@ -121,9 +121,9 @@ llmkb-update
 Move the physical file using your operating system's file explorer.
 
 **The Command**:
-Run the update orchestrator:
+Run the organization tool:
 ```bash
-llmkb-update
+llmkb-add
 ```
 
 **The Consequences (What Happens)**:
@@ -169,7 +169,7 @@ llmkb-reject <doc_id> --reason "Irrelevant content"
 **The Consequences (What Happens)**:
 1. **File Move**: The physical file is moved from its current location (e.g., `raw/library/`) to **`raw/rejected/`**.
 2. **Override Update**: An entry is added to `config/source_overrides.json` marking the status as `rejected`. This ensures that even if you manually move the file back, the engine remembers it was rejected.
-3. **Automated Cleanup**: You should run `llmkb-update` immediately after. The engine will:
+3. **Automated Cleanup**: You should run `llmkb-add` immediately after. The engine will:
     - Remove the document from the master `sources.json` catalog (because it ignores the `rejected/` folder).
     - Trigger `llmkb-clean` to delete the orphaned extracted text and the generated `wiki/source/` page.
     - Scrub the document from all `wiki/concepts/` pages.
