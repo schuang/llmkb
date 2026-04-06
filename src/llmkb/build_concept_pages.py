@@ -252,21 +252,7 @@ def noisy_text(text: str) -> bool:
     return any(fragment in lowered for fragment in NOISY_TEXT_FRAGMENTS)
 
 
-def page_preview_lines(context: KBContext, doc_id: str, page_cache: dict[str, list[dict[str, Any]]]) -> list[str]:
-    if doc_id not in page_cache:
-        pages_path = context.extraction_paths(doc_id)["pages"]
-        if not pages_path.exists():
-            page_cache[doc_id] = []
-        else:
-            payload = load_json(pages_path)
-            page_cache[doc_id] = payload.get("pages", [])
-    previews = []
-    for page in page_cache[doc_id]:
-        preview = compact_whitespace(page.get("preview", ""))
-        if not preview or noisy_text(preview):
-            continue
-        previews.append(preview)
-    return previews
+
 
 
 def singularize_token(token: str) -> str:
@@ -307,39 +293,7 @@ def is_phrase_subsumed(
     return False
 
 
-def candidate_phrases(
-    document: dict[str, Any],
-    context: KBContext,
-    page_cache: dict[str, list[dict[str, Any]]],
-) -> dict[str, float]:
-    phrases: dict[str, float] = {}
 
-    def add_phrase(tokens: list[str], weight: float) -> None:
-        if valid_phrase(tokens):
-            phrase = " ".join(tokens)
-            phrases[phrase] = max(phrases.get(phrase, 0.0), weight)
-
-    title = document.get("title", "")
-    title_tokens = [] if noisy_text(title) else query_terms(title)
-    for size in (2, 3):
-        for start in range(0, max(len(title_tokens) - size + 1, 0)):
-            add_phrase(title_tokens[start : start + size], 4.0 + size)
-
-    summary = document.get("summary", "")
-    summary_tokens = [] if noisy_text(summary) else query_terms(summary)[:24]
-    for size in (2, 3):
-        for start in range(0, max(len(summary_tokens) - size + 1, 0)):
-            add_phrase(summary_tokens[start : start + size], 1.0 + size * 0.5)
-
-    for preview in page_preview_lines(context, document["doc_id"], page_cache):
-        preview_tokens = query_terms(preview)
-        if not 2 <= len(preview_tokens) <= 8:
-            continue
-        for size in (2, 3):
-            for start in range(0, max(len(preview_tokens) - size + 1, 0)):
-                add_phrase(preview_tokens[start : start + size], 3.5 + size * 0.5)
-
-    return phrases
 
 
 def title_case_phrase(phrase: str) -> str:
@@ -530,9 +484,22 @@ def main() -> None:
     page_cache: dict[str, list[dict[str, Any]]] = {}
 
     for document in documents:
-        for phrase, weight in candidate_phrases(document, context, page_cache).items():
-            phrase_docs[phrase].add(document["doc_id"])
-            phrase_scores[phrase] += weight
+        # Use existing keywords from the search index
+        for keyword in document.get("keywords", []):
+            if len(keyword.split()) >= 2: # Only multi-word phrases for concepts
+                phrase_docs[keyword.lower()].add(document["doc_id"])
+                phrase_scores[keyword.lower()] += 5.0 # High weight for explicit keywords
+        
+        # Also include title bigrams/trigrams as candidates
+        title = document.get("title", "")
+        title_tokens = [] if noisy_text(title) else query_terms(title)
+        for size in (2, 3):
+            for start in range(0, max(len(title_tokens) - size + 1, 0)):
+                phrase = " ".join(title_tokens[start : start + size])
+                if valid_phrase(title_tokens[start : start + size]):
+                    phrase_docs[phrase].add(document["doc_id"])
+                    phrase_scores[phrase] += 4.0 + size
+
 
     ranked_candidates = []
     for phrase, doc_ids in phrase_docs.items():
