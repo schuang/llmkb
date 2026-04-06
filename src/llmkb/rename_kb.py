@@ -52,85 +52,107 @@ def update_wiki_links(wiki_dir: Path, old_id: str, new_id: str, dry_run: bool) -
 
 
 
+
 def rename_document(context: KBContext, old_id: str, new_id: str, dry_run: bool = False, no_link_update: bool = False) -> bool:
     """Rename a document and all its associated artifacts across the knowledge base.
     
     Returns True if successful, False otherwise.
     """
     if not context.catalog_path.exists():
-        print(f"Catalog not found at {context.catalog_path}. Run llmkb-catalog first.")
+        print(f"Error: Catalog not found at {context.catalog_path}. Run llmkb-add first.")
         return False
 
     catalog = load_json(context.catalog_path)
     old_entry = next((doc for doc in catalog.get("documents", []) if doc["doc_id"] == old_id), None)
+    new_entry = next((doc for doc in catalog.get("documents", []) if doc["doc_id"] == new_id), None)
 
     if not old_entry:
-        print(f"Error: doc_id '{old_id}' not found in catalog.")
+        print(f"Error: Current doc_id '{old_id}' not found in catalog.")
+        return False
+        
+    if new_entry:
+        print(f"Error: Target doc_id '{new_id}' is already in use by: {new_entry.get('path')}")
         return False
 
-    # 1. Rename the physical file
+    # 1. Determine paths
     old_rel_path = old_entry["path"]
-    old_file_path = Path(old_rel_path)
-    if not old_file_path.is_absolute():
-         old_file_path = context.root / old_rel_path
+    old_file_path = context.root / old_rel_path
     
+    # Calculate new file path (preserving original extension)
+    original_ext = Path(old_rel_path).suffix
+    new_filename = f"{new_id}{original_ext}"
+    new_file_path = old_file_path.parent / new_filename
+    
+    # Bulletproof Check: Physical file collision
+    if new_file_path.exists() and new_file_path.resolve() != old_file_path.resolve():
+        print(f"Error: A physical file already exists at target path: {new_file_path.relative_to(context.root)}")
+        return False
+        
+    # Bulletproof Check: Artifact collision
+    new_extract_dir = context.extract_dir / new_id
+    if new_extract_dir.exists():
+        print(f"Error: Extraction artifacts already exist for target id: {new_id}")
+        return False
+        
+    # Bulletproof Check: Wiki page collision
+    new_wiki_page = context.source_wiki_dir / f"{new_id}.md"
+    if new_wiki_page.exists():
+        print(f"Error: A wiki page already exists for target id: {new_id}")
+        return False
+
+    print(f"Renaming '{old_id}' to '{new_id}'...")
+
+    # 2. Perform Physical Rename
     if not old_file_path.exists():
         print(f"Warning: Source file not found at {old_file_path}")
     else:
-        # Avoid simple replace to not mess up path components if doc_id is short
-        new_filename = f"{new_id}{old_file_path.suffix}"
-        new_file_path = old_file_path.parent / new_filename
         if dry_run:
-            print(f"Would rename file: {old_file_path} -> {new_file_path}")
+            print(f"  [Dry Run] Would rename file: {old_file_path.name} -> {new_filename}")
         else:
-            print(f"Renaming file: {old_file_path} -> {new_file_path}")
+            print(f"  Renaming file: {old_file_path.name} -> {new_filename}")
             old_file_path.rename(new_file_path)
 
-    # 2. Rename artifact folder
+    # 3. Rename artifact folder
     old_extract_dir = context.extract_dir / old_id
-    new_extract_dir = context.extract_dir / new_id
     if old_extract_dir.exists():
         if dry_run:
-            print(f"Would rename artifacts: {old_extract_dir} -> {new_extract_dir}")
+            print(f"  [Dry Run] Would rename artifacts: {old_id} -> {new_id}")
         else:
-            print(f"Renaming artifacts: {old_extract_dir} -> {new_extract_dir}")
+            print(f"  Renaming artifacts: {old_id} -> {new_id}")
             old_extract_dir.rename(new_extract_dir)
 
-    # 3. Rename wiki page
+    # 4. Rename wiki page
     old_wiki_page = context.source_wiki_dir / f"{old_id}.md"
-    new_wiki_page = context.source_wiki_dir / f"{new_id}.md"
     if old_wiki_page.exists():
         if dry_run:
-            print(f"Would rename wiki page: {old_wiki_page} -> {new_wiki_page}")
+            print(f"  [Dry Run] Would rename wiki page: {old_id}.md -> {new_id}.md")
         else:
-            print(f"Renaming wiki page: {old_wiki_page} -> {new_wiki_page}")
+            print(f"  Renaming wiki page: {old_id}.md -> {new_id}.md")
             old_wiki_page.rename(new_wiki_page)
 
-    # 4. Update source_overrides.json
+    # 5. Update source_overrides.json
     overrides_path = context.overrides_path
     overrides_payload = load_json(overrides_path) if overrides_path.exists() else {}
     if old_id in overrides_payload:
         if dry_run:
-            print(f"Would update override entry for {old_id}")
+            print(f"  [Dry Run] Would update override entry for {old_id}")
         else:
-            print(f"Updating override entry for {old_id}")
+            print(f"  Updating override entry for {old_id}")
             data = overrides_payload.pop(old_id)
             overrides_payload[new_id] = data
             write_json(overrides_path, overrides_payload)
 
-    # 5. Update wiki links
+    # 6. Update wiki links
     if not no_link_update:
         update_wiki_links(context.wiki_dir, old_id, new_id, dry_run)
 
-    # 6. Update sources.json directly
+    # 7. Update sources.json directly
     if not dry_run:
         catalog["documents"] = [doc for doc in catalog.get("documents", []) if doc["doc_id"] != old_id]
-        # We don't add the NEW entry here because llmkb-update will pick it up correctly 
-        # now that the physical file is renamed and the Duplicate Shield is fixed.
-        # Removing the old entry prevents "phantom" duplicates.
         write_json(context.catalog_path, catalog)
 
     return True
+
 
 def main() -> None:
     args = parse_args()
