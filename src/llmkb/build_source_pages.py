@@ -494,8 +494,10 @@ def main() -> None:
     previous_index = {}
     if index_output.exists():
         try:
-            old_index_docs = load_json(index_output)
-            previous_index = {doc["doc_id"]: doc for doc in old_index_docs}
+            payload = load_json(index_output)
+            # Support both old list-style and new dict-style index files
+            docs_list = payload.get("documents", payload) if isinstance(payload, dict) else payload
+            previous_index = {doc["doc_id"]: doc for doc in docs_list if "doc_id" in doc}
         except Exception:
             pass
     resolution_payload = load_json(resolution_path) if resolution_path.exists() else {"documents": []}
@@ -563,6 +565,7 @@ def main() -> None:
                         "chapters": index_entry.get("chapters", []),
                     })
                 elif paths["pages"].exists():
+                    
                     payload = load_json(paths["pages"])
                     pages = payload.get("pages", [])
                     _, index_entry = build_page(document, pages, args.model, args.summarize_books)
