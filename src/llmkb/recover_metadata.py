@@ -19,6 +19,8 @@ try:
 except ImportError:
     LITELLM_AVAILABLE = False
 
+DEFAULT_LLM_MODEL = "openai/gpt-5.4-mini"
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Use LLM to recover missing metadata for poorly cataloged documents.")
@@ -29,8 +31,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model",
-        default=os.environ.get("LLM_MODEL", "gemini/gemini-2.5-flash"),
-        help="LiteLLM model string (e.g. 'gemini/gemini-2.5-flash', 'ollama/llama3').",
+        default=os.environ.get("LLM_MODEL", DEFAULT_LLM_MODEL),
+        help="LiteLLM model string (e.g. 'openai/gpt-5.4-mini', 'gemini/gemini-2.5-flash', 'ollama/llama3').",
     )
     parser.add_argument(
         "--doc-id",
@@ -114,8 +116,13 @@ def main() -> None:
 
     args = parse_args()
 
-    # 2. Verify API Key exists for the default model
-    if "gemini" in args.model.lower() and not os.environ.get("GEMINI_API_KEY"):
+    # 2. Verify API key exists for the selected provider
+    model_name = args.model.lower()
+    if model_name.startswith("openai/") and not os.environ.get("OPENAI_API_KEY"):
+        print("Error: OPENAI_API_KEY not found in environment or ~/.env.")
+        print("Please export it or add it to your ~/.env file.")
+        return
+    if model_name.startswith("gemini/") and not os.environ.get("GEMINI_API_KEY"):
         print("Error: GEMINI_API_KEY not found in environment or ~/.env.")
         print("Please export it or add it to your ~/.env file.")
         return

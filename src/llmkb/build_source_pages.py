@@ -29,6 +29,8 @@ from llmkb.kb_common import (
     write_json,
 )
 
+DEFAULT_LLM_MODEL = "openai/gpt-5.4-mini"
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate wiki source pages and a search index.")
@@ -74,7 +76,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--doc-id", action="append", default=[], help="Limit build to selected doc_ids.")
     parser.add_argument("--summarize-books", action="store_true", help="Enable expensive LLM-powered chapter-by-chapter book summarization.")
-    parser.add_argument("--model", default=os.environ.get("LLM_MODEL", "gemini/gemini-2.5-flash"), help="LiteLLM model string.")
+    parser.add_argument(
+        "--model",
+        default=os.environ.get("LLM_MODEL", DEFAULT_LLM_MODEL),
+        help="LiteLLM model string.",
+    )
     parser.add_argument("--force", action="store_true", help="Regenerate all selected source pages.")
     return parser.parse_args()
 
@@ -478,7 +484,10 @@ def main() -> None:
     args = parse_args()
     context = KBContext(args.kb_root)
     
-    if "gemini" in args.model.lower() and not os.environ.get("GEMINI_API_KEY"):
+    model_name = args.model.lower()
+    if model_name.startswith("openai/") and not os.environ.get("OPENAI_API_KEY"):
+        print("Warning: OPENAI_API_KEY not found. LLM summarization will fail.")
+    elif model_name.startswith("gemini/") and not os.environ.get("GEMINI_API_KEY"):
         print("Warning: GEMINI_API_KEY not found. LLM summarization will fail.")
     wiki_source_dir = args.wiki_source_dir or context.source_wiki_dir
     index_output = args.index_output or context.search_index_path
