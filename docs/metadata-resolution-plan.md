@@ -9,21 +9,21 @@ This document outlines the strategy for implementing high-quality, automated met
 
 ## The Zero-Touch Ingestion Workflow
 
-The end-to-end process from dropping a raw PDF to a fully synced Zotero library and generated knowledge base follows two primary tracks depending on the document type.
+The end-to-end process from dropping a raw PDF to a generated knowledge base and optional BibTeX export follows two primary tracks depending on the document type.
 
 ### Track A: Research Papers
 1. **PDF Drop**: User places a new paper into `raw/`.
 2. **Identification (Local)**: `llmkb-catalog` extracts the first few pages and uses regex to find a **DOI** (e.g., `10.1016/...`).
 3. **Query (API)**: The engine queries the free **Crossref API** using the DOI.
 4. **Metadata Extraction**: Canonical metadata (Title, Authors, Journal, Year) is retrieved and saved to `sources.json`.
-5. **Update Zotero**: The engine generates or updates a local `.bib` (BibTeX) file that Zotero is configured to automatically ingest/sync, bridging the knowledge base back to the reference manager.
+5. **Export BibTeX**: The engine generates or updates a local `.bib` (BibTeX) file that can be imported into Zotero or another reference manager.
 
 ### Track B: Books
 1. **PDF Drop**: User places a new book into `raw/`.
 2. **Identification (Local)**: `llmkb-catalog` extracts the first few pages and uses regex to find an **ISBN** (10 or 13).
 3. **Query (API)**: The engine queries the free **Open Library API** (or Google Books API) using the ISBN.
 4. **Metadata Extraction**: Canonical metadata (Title, Authors, Publisher, Year) is retrieved and saved to `sources.json`.
-5. **Update Zotero**: The engine generates or updates the same local `.bib` file, completing the sync.
+5. **Export BibTeX**: The engine generates or updates the same local `.bib` file for optional import into a reference manager.
 
 ### Track C: Informal Documents (No DOI/ISBN)
 For unpublished manuscripts, random reports, or notes that lack formal identifiers.
@@ -31,7 +31,7 @@ For unpublished manuscripts, random reports, or notes that lack formal identifie
 2. **Identification Fails**: `llmkb-catalog` finds no DOI or ISBN.
 3. **Fallback (LLM/Heuristic)**: The engine passes the first few pages to a lightweight LLM to extract a basic Title and Author, or falls back to filename guessing.
 4. **Knowledge Base Ingestion**: The document is fully extracted, summarized, and synthesized into `wiki/` pages and concepts alongside formal literature.
-5. **Zotero Exclusion**: Because it lacks canonical metadata, the engine deliberately **omits** this document from the `.bib` export. This keeps the Zotero database pristine and reserved strictly for formal citations, while the `kb/` remains a comprehensive "catch-all" research brain. *(Note: Users can manually force a document into the `.bib` export via `source_overrides.json` if they need to cite an unpublished manuscript).*
+5. **Zotero Exclusion**: Because it lacks canonical metadata, the engine deliberately **omits** this document from the `.bib` export. This keeps the Zotero database pristine and reserved strictly for formal citations, while the `kb/` remains a comprehensive "catch-all" research brain. *(Note: Users can manually force a document into the `.bib` export via `source_overrides.json`, for example with `zotero_include: true`, if they need to cite an unpublished manuscript).*
 
 ---
 
@@ -86,7 +86,7 @@ Update `llmkb-catalog` (`catalog_raw.py`):
 Create a new module `src/llmkb/export_bibtex.py`:
 1. Read the newly resolved canonical metadata from `sources.json`.
 2. Format the metadata into a standard `.bib` (BibTeX) file (e.g., `artifacts/compile/library.bib`).
-3. Allow Zotero or other reference managers to "Subscribe" or "Auto-sync" with this file, enabling a one-way bridge from `llmkb`'s metadata resolution into the user's reference library.
+3. Generate a clean BibTeX export that can be imported into Zotero or other reference managers as a one-way bridge from `llmkb`'s metadata resolution into the user's reference workflow.
 
 ## Data Schema Updates
 The `sources.json` and source markdown frontmatter should be updated to store:

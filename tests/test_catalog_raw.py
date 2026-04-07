@@ -7,6 +7,7 @@ from llmkb.catalog_raw import (
     infer_source_class,
     apply_override,
 )
+from llmkb.add_source import build_entry
 
 def test_infer_doc_id():
     slug, year = infer_doc_id(Path("2021-gelman-etal-regression.pdf"))
@@ -48,3 +49,34 @@ def test_apply_override():
     assert entry["year"] == 2000          # Unchanged
     assert entry["title"] == "New Title"  # Overridden
     assert entry["author"] == "Jane Doe"  # Added
+
+
+def test_build_entry_persists_resolved_journal_and_publisher(monkeypatch, tmp_path):
+    source = tmp_path / "paper.pdf"
+    source.write_text("dummy", encoding="utf-8")
+
+    monkeypatch.setattr("llmkb.add_source.parse_pdfinfo", lambda path: {
+        "Title": "Fallback Title",
+        "Author": "Fallback Author",
+        "Producer": "PDF Producer",
+        "Pages": "12",
+    })
+    monkeypatch.setattr("llmkb.add_source.compute_sha256", lambda path: "abc123")
+    monkeypatch.setattr("llmkb.add_source.extract_identifiers", lambda path: ("10.1000/example", None))
+    monkeypatch.setattr("llmkb.add_source.resolve_doi", lambda doi: {
+        "title": "Resolved Title",
+        "author": "Jane Doe",
+        "year": 2024,
+        "publisher": "Elsevier",
+        "journal": "Journal of Testing",
+        "metadata_source": "crossref",
+    })
+
+    entry = build_entry(source, tmp_path, probe_text=False, existing_hashes=set())
+
+    assert entry["title"] == "Resolved Title"
+    assert entry["author"] == "Jane Doe"
+    assert entry["year"] == 2024
+    assert entry["journal"] == "Journal of Testing"
+    assert entry["publisher"] == "Elsevier"
+    assert entry["producer"] == "PDF Producer"

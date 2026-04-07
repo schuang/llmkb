@@ -571,11 +571,15 @@ def build_entry(path: Path, kb_root: Path, probe_text: bool, existing_hashes: se
         title = resolved_meta.get("title") or pdfinfo.get("Title") or None
         author = resolved_meta.get("author") or pdfinfo.get("Author") or None
         year = resolved_meta.get("year") or year
-        publisher = resolved_meta.get("publisher") or pdfinfo.get("Producer") or None
+        publisher = resolved_meta.get("publisher") or None
+        journal = resolved_meta.get("journal") or None
     else:
         title = pdfinfo.get("Title") or None
         author = pdfinfo.get("Author") or None
-        publisher = pdfinfo.get("Producer") or None
+        publisher = None
+        journal = None
+
+    producer = pdfinfo.get("Producer") or None
 
     author = normalize_author_string(author)
 
@@ -592,7 +596,9 @@ def build_entry(path: Path, kb_root: Path, probe_text: bool, existing_hashes: se
         "doi": doi,
         "isbn": isbn,
         "metadata_source": metadata_source,
-        "producer": publisher,
+        "journal": journal,
+        "publisher": publisher,
+        "producer": producer,
         "source_class": "unknown",
         "canonical_doc_id": doc_id,
         "relationship": None,

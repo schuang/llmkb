@@ -38,7 +38,7 @@ Once activated, all `llmkb-*` commands are available globally in your terminal.
 The engine separates structural organization from heavy AI processing to keep your experience fast:
 
 1. **Step 1: The Librarian (`llmkb-add`)**: Run this whenever you add or remove physical files. It is nearly instantaneous. It renames your files, updates the catalog, and performs "Micro-OCR" (scanning the first 3 pages) to find identifiers.
-2. **Step 2: The Processor (`llmkb-update`)**: Run this when you are ready to build your research wiki. It performs full OCR, calls LLM APIs for summarization, and builds the concept network. 
+2. **Step 2: The Processor (`llmkb-update`)**: Run this when you are ready to build your research wiki. It performs full OCR, calls LLM APIs for summarization, builds the concept network, and refreshes `artifacts/compile/library.bib` for Zotero sync.
    - *Efficiency*: `llmkb-update` uses intelligent caching. If your files haven't changed, it runs in seconds!
 
 ## Key Directories: Where to put your files
@@ -144,7 +144,7 @@ llmkb-add
 
 ## Scenario 6: Exporting to Zotero
 
-**The Goal**: You want your academic reference manager (like Zotero) to automatically sync with your LLM Knowledge Base so you can cite papers in LaTeX or Word.
+**The Goal**: You want a BibTeX export that you can import into an academic reference manager like Zotero so you can cite papers in LaTeX or Word.
 
 **The Action**:
 Run the BibTeX export command.
@@ -155,12 +155,12 @@ llmkb-export
 ```
 
 **The Consequences (What Happens)**:
-1. **Compilation**: The engine reads your `sources.json` catalog and filters out any informal or rejected documents.
-2. **BibTeX Generation**: It generates a perfectly formatted `library.bib` file in `artifacts/compile/library.bib`.
-3. **Smart Linking**: It automatically injects a `note` field into every BibTeX entry containing the Obsidian link (`LLMKB: [[source/<doc_id>]]`).
-4. **Local PDF Linking**: The `.bib` file includes a `file = {raw/library/...}` field. This prevents Zotero from uploading your PDFs to its cloud storage. Instead, it creates a "Linked Attachment." 
+1. **Compilation**: The engine reads your `sources.json` catalog and exports only citeable documents by default: records with a DOI or ISBN, excluding rejected or duplicate items.
+2. **BibTeX Generation**: It generates a `library.bib` file in `artifacts/compile/library.bib`.
+3. **Local PDF Linking**: The `.bib` file includes a `file = {raw/library/...}` field. This prevents Zotero from uploading your PDFs to its cloud storage. Instead, it creates a "Linked Attachment." 
    - **Crucial Step**: In Zotero, go to *Preferences* -> *Advanced* -> *Files and Folders* and set your **Linked Attachment Base Directory** to the root folder of your knowledge base (e.g., `~/work/kb`). Zotero will instantly resolve the relative paths and allow you to open the PDFs directly from its UI!
-5. **Zotero Sync**: If you use Zotero with the **Better BibTeX** plugin, you can tell Zotero to "Import" and "Keep Updated" this specific `.bib` file. Every time you run `llmkb-export`, Zotero will instantly absorb your new research!
+4. **Manual Override**: If you need to export an informal document anyway, set `zotero_include: true` for that `doc_id` in `config/source_overrides.json`.
+5. **Zotero Import Workflow**: Treat `library.bib` as an export artifact for Zotero import, not as a guaranteed incremental sync channel. Re-importing updated BibTeX files may create duplicates, so review your Zotero workflow carefully before repeated imports.
 
 ---
 

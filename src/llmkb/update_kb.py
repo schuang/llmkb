@@ -116,6 +116,7 @@ def main() -> None:
     # 3. Generation (Wiki creation)
     results["source_pages"] = run_step("build_source_pages.py", extra_args)
     results["concept_pages"] = run_step("build_concept_pages.py", ["--kb-root", args.kb_root])
+    results["export_bibtex"] = run_step("export_bibtex.py", ["--kb-root", args.kb_root])
 
     if not args.no_report:
         report_path = generate_report(context, results)
