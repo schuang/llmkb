@@ -61,3 +61,60 @@ The engine will automatically catalog your files, extract their text, and genera
 - `llmkb-rename`: Safely renames a `doc_id` and heals all wiki links.
 - `llmkb-test-metadata`: Utility to test live API resolution for a DOI/ISBN.
 - `llmkb-search`: Natural-language search across the generated knowledge base.
+- `llmkb-zotero-sync`: Two-way API bridge state manager with one-way sync policy (`local -> Zotero`) using `pyzotero`.
+
+## Zotero API Sync (pyzotero)
+
+This project now supports direct Zotero Web API sync via `pyzotero` using a local mapping state (`artifacts/zotero/sync_state.json`).
+
+### 1. Set credentials
+
+Store credentials in `.env` (project) or `~/.env`:
+
+```bash
+ZOTERO_API_KEY=...
+ZOTERO_USER_ID=...
+# or:
+# ZOTERO_LIBRARY_ID=...
+```
+
+### 2. Initialize sync config
+
+From your KB root:
+
+```bash
+llmkb-zotero-sync --kb-root /path/to/your/knowledge-base --init-config
+```
+
+Then edit `config/zotero_sync.json`:
+- Set `library_type` to `user` or `group`.
+- Optionally set `library_id` directly (otherwise it is read from env).
+- Optional `collection_key` to target a specific Zotero collection.
+- `include_attachments` controls linked-file attachment creation.
+- `min_request_interval_ms` controls pacing (default `1000`) to reduce rate-limit risk.
+
+### 3. Bootstrap safely
+
+Preview first:
+
+```bash
+llmkb-zotero-sync --kb-root /path/to/your/knowledge-base --dry-run
+```
+
+Run a small initial batch:
+
+```bash
+llmkb-zotero-sync --kb-root /path/to/your/knowledge-base --limit 20
+```
+
+Then run full sync:
+
+```bash
+llmkb-zotero-sync --kb-root /path/to/your/knowledge-base
+```
+
+### 4. Ongoing usage
+
+Re-run `llmkb-zotero-sync` after local add/rename/delete operations to keep Zotero consistent with local state.
+
+Current policy is one-way source of truth: local catalog drives Zotero updates/deletes/creates.

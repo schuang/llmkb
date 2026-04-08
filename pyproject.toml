@@ -8,7 +8,8 @@ version = "0.1.0"
 description = "LLM Knowledge Base Engine"
 requires-python = ">=3.9"
 dependencies = [
-    "litellm>=1.0.0"
+    "litellm>=1.0.0",
+    "pyzotero>=1.11.0",
 ]
 
 [project.optional-dependencies]
@@ -28,3 +29,4 @@ llmkb-recover-metadata = "llmkb.recover_metadata:main"
 llmkb-reject = "llmkb.reject_source:main"
 llmkb-export = "llmkb.export_bibtex:main"
 llmkb-search = "llmkb.search_kb:main"
+llmkb-zotero-sync = "llmkb.sync_zotero:main"
